@@ -34,6 +34,7 @@ import {
   getDocs,
   query,
   orderBy,
+  where,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -61,7 +62,7 @@ const auth = getAuth(app);
 const App = () => {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [loginMode, setLoginMode] = useState("login"); // 'login' o 'register'
+  const [loginMode, setLoginMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -87,13 +88,12 @@ const App = () => {
 
   const groups = ["15-18", "19-22", "23-40"];
 
-  // Verificar autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
       if (currentUser) {
-        loadData();
+        loadData(currentUser.uid);
       }
     });
     return () => unsubscribe();
@@ -113,6 +113,8 @@ const App = () => {
         alert("Contraseña incorrecta.");
       } else if (error.code === "auth/invalid-email") {
         alert("Email inválido.");
+      } else if (error.code === "auth/invalid-credential") {
+        alert("Credenciales inválidas. Verifica tu email y contraseña.");
       } else {
         alert("Error al iniciar sesión: " + error.message);
       }
@@ -157,19 +159,28 @@ const App = () => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (userId) => {
     setLoading(true);
     try {
-      const youthsSnapshot = await getDocs(collection(db, "youths"));
+      // Cargar jóvenes del usuario actual
+      const youthsQuery = query(
+        collection(db, "youths"),
+        where("userId", "==", userId)
+      );
+      const youthsSnapshot = await getDocs(youthsQuery);
       const youthsData = youthsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setYouths(youthsData);
 
-      const attendancesSnapshot = await getDocs(
-        query(collection(db, "attendances"), orderBy("date", "desc"))
+      // Cargar asistencias del usuario actual
+      const attendancesQuery = query(
+        collection(db, "attendances"),
+        where("userId", "==", userId),
+        orderBy("date", "desc")
       );
+      const attendancesSnapshot = await getDocs(attendancesQuery);
       const attendancesData = attendancesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -193,6 +204,7 @@ const App = () => {
       const youth = {
         ...newYouth,
         age: parseInt(newYouth.age),
+        userId: user.uid, // Agregar ID del usuario
         createdAt: new Date().toISOString(),
       };
 
@@ -241,7 +253,9 @@ const App = () => {
       await updateDoc(youthRef, updatedData);
 
       const updatedYouths = youths.map((y) =>
-        y.id === editingYouth.id ? { id: editingYouth.id, ...updatedData } : y
+        y.id === editingYouth.id
+          ? { id: editingYouth.id, ...updatedData, userId: user.uid }
+          : y
       );
       setYouths(updatedYouths);
 
@@ -288,6 +302,7 @@ const App = () => {
           const youth = youths.find((y) => y.id === id);
           return { id, name: youth.name, group: youth.group };
         }),
+        userId: user.uid, // Agregar ID del usuario
         createdAt: new Date().toISOString(),
       };
 
@@ -395,7 +410,6 @@ const App = () => {
     }
   };
 
-  // Pantalla de carga inicial
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -407,7 +421,6 @@ const App = () => {
     );
   }
 
-  // Pantalla de Login/Registro
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -503,7 +516,6 @@ const App = () => {
     );
   }
 
-  // Pantalla de carga de datos
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -517,7 +529,6 @@ const App = () => {
     );
   }
 
-  // Aplicación principal (igual que antes, solo agrego botón de logout)
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
