@@ -99,6 +99,20 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
+  // Agregar este useEffect después del useEffect de autenticación existente
+  useEffect(() => {
+    if (user) {
+      // Timer para cerrar sesión después de 1 hora (3600000 ms)
+      const logoutTimer = setTimeout(() => {
+        handleLogout();
+        alert("Tu sesión ha expirado por inactividad");
+      }, 3600000); // 1 hora = 60 * 60 * 1000 ms
+
+      // Limpiar el timer cuando el usuario cierre sesión o el componente se desmonte
+      return () => clearTimeout(logoutTimer);
+    }
+  }, [user]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
