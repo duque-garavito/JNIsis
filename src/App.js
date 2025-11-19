@@ -106,7 +106,7 @@ const App = () => {
       const logoutTimer = setTimeout(() => {
         handleLogout();
         alert("Tu sesión ha expirado por inactividad");
-      }, 3600000); // 1 hora = 60 * 60 * 1000 ms
+      }, 900000); // 15 min = 15 * 60 * 1000 ms
 
       // Limpiar el timer cuando el usuario cierre sesión o el componente se desmonte
       return () => clearTimeout(logoutTimer);
