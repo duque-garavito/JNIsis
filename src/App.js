@@ -851,7 +851,7 @@ const App = () => {
                           phone: "",
                           address: "",
                           birthdate: "",
-                          group: "15-18",
+                          group: "11-14",
                         });
                       }}
                       className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
