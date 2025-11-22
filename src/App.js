@@ -231,7 +231,7 @@ const App = () => {
         phone: "",
         address: "",
         birthdate: "",
-        group: "15-18",
+        group: "11-14",
       });
       setShowAddYouth(false);
       alert("Joven agregado exitosamente");
@@ -278,7 +278,7 @@ const App = () => {
         phone: "",
         address: "",
         birthdate: "",
-        group: "15-18",
+        group: "11-14",
       });
       setShowAddYouth(false);
       setEditingYouth(null);
@@ -343,6 +343,7 @@ const App = () => {
       if (!dateMap[att.date]) {
         dateMap[att.date] = {
           date: att.date,
+          "11-14": 0,
           "15-18": 0,
           "19-22": 0,
           "23-40": 0,
@@ -360,7 +361,7 @@ const App = () => {
   };
 
   const getGroupTotals = () => {
-    const totals = { "15-18": 0, "19-22": 0, "23-40": 0 };
+    const totals = { "11-14": 0, "15-18": 0, "19-22": 0, "23-40": 0 };
     attendances.forEach((att) => {
       att.youths.forEach((youth) => {
         totals[youth.group]++;
