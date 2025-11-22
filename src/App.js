@@ -699,6 +699,13 @@ const App = () => {
                           <Legend />
                           <Line
                             type="monotone"
+                            dataKey="11-14"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            name="11-14 años"
+                          />
+                          <Line
+                            type="monotone"
                             dataKey="15-18"
                             stroke="#3b82f6"
                             strokeWidth={2}
@@ -954,7 +961,7 @@ const App = () => {
                             phone: "",
                             address: "",
                             birthdate: "",
-                            group: "15-18",
+                            group: "11-14",
                           });
                         }}
                         className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
