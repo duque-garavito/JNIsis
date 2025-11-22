@@ -79,15 +79,14 @@ const App = () => {
     phone: "",
     address: "",
     birthdate: "",
-    group: "15-18",
+    group: "11-14",
   });
   const [attendanceDate, setAttendanceDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [selectedYouths, setSelectedYouths] = useState([]);
 
-  const groups = ["15-18", "19-22", "23-40"];
-
+  const groups = ["11-14", "15-18", "19-22", "23-40"];
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -112,7 +111,7 @@ const App = () => {
       return () => clearTimeout(logoutTimer);
     }
   }, [user]);
-  
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
