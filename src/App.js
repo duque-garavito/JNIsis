@@ -44,7 +44,6 @@ import {
   signOut,
 } from "firebase/auth";
 
-// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBaLYbJKeqgUE89dKPmFAyQJIk_X8tCqJk",
   authDomain: "jnisis.firebaseapp.com",
@@ -54,7 +53,6 @@ const firebaseConfig = {
   appId: "1:597624905955:web:94cba5f2a423f3875da5d6",
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -86,7 +84,34 @@ const App = () => {
   );
   const [selectedYouths, setSelectedYouths] = useState([]);
 
+  // Estados para Tesorería
+  const [tithesOfferings, setTithesOfferings] = useState([]);
+  const [groupIncomes, setGroupIncomes] = useState([]);
+  const [generalExpenses, setGeneralExpenses] = useState([]);
+  const [showAddTithe, setShowAddTithe] = useState(false);
+  const [showAddIncome, setShowAddIncome] = useState(false);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [newTithe, setNewTithe] = useState({
+    date: new Date().toISOString().split("T")[0],
+    category: "adolescentes",
+    type: "diezmo",
+    amount: "",
+    description: "",
+  });
+  const [newIncome, setNewIncome] = useState({
+    date: new Date().toISOString().split("T")[0],
+    group: "11-14",
+    amount: "",
+    description: "",
+  });
+  const [newExpense, setNewExpense] = useState({
+    date: new Date().toISOString().split("T")[0],
+    amount: "",
+    description: "",
+  });
+
   const groups = ["11-14", "15-18", "19-22", "23-40"];
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -98,16 +123,14 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
-  // Agregar este useEffect después del useEffect de autenticación existente
+  // Timer de cierre de sesión automático a los 15 minutos
   useEffect(() => {
     if (user) {
-      // Timer para cerrar sesión después de 15 minutos (900000 ms)
       const logoutTimer = setTimeout(() => {
         handleLogout();
         alert("Tu sesión ha expirado después de 15 minutos");
-      }, 900000); // 15 minutos = 15 * 60 * 1000 ms
+      }, 900000);
 
-      // Limpiar el timer cuando el usuario cierre sesión o el componente se desmonte
       return () => clearTimeout(logoutTimer);
     }
   }, [user]);
@@ -167,6 +190,9 @@ const App = () => {
       await signOut(auth);
       setYouths([]);
       setAttendances([]);
+      setTithesOfferings([]);
+      setGroupIncomes([]);
+      setGeneralExpenses([]);
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -175,7 +201,6 @@ const App = () => {
   const loadData = async (userId) => {
     setLoading(true);
     try {
-      // Cargar jóvenes del usuario actual
       const youthsQuery = query(
         collection(db, "youths"),
         where("userId", "==", userId)
@@ -187,7 +212,6 @@ const App = () => {
       }));
       setYouths(youthsData);
 
-      // Cargar asistencias del usuario actual
       const attendancesQuery = query(
         collection(db, "attendances"),
         where("userId", "==", userId),
@@ -199,6 +223,42 @@ const App = () => {
         ...doc.data(),
       }));
       setAttendances(attendancesData);
+
+      const tithesQuery = query(
+        collection(db, "tithes-offerings"),
+        where("userId", "==", userId),
+        orderBy("date", "desc")
+      );
+      const tithesSnapshot = await getDocs(tithesQuery);
+      const tithesData = tithesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTithesOfferings(tithesData);
+
+      const incomesQuery = query(
+        collection(db, "group-incomes"),
+        where("userId", "==", userId),
+        orderBy("date", "desc")
+      );
+      const incomesSnapshot = await getDocs(incomesQuery);
+      const incomesData = incomesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setGroupIncomes(incomesData);
+
+      const expensesQuery = query(
+        collection(db, "general-expenses"),
+        where("userId", "==", userId),
+        orderBy("date", "desc")
+      );
+      const expensesSnapshot = await getDocs(expensesQuery);
+      const expensesData = expensesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setGeneralExpenses(expensesData);
     } catch (error) {
       console.error("Error cargando datos:", error);
       alert("Error al cargar datos de Firebase");
@@ -217,7 +277,7 @@ const App = () => {
       const youth = {
         ...newYouth,
         age: parseInt(newYouth.age),
-        userId: user.uid, // Agregar ID del usuario
+        userId: user.uid,
         createdAt: new Date().toISOString(),
       };
 
@@ -315,7 +375,7 @@ const App = () => {
           const youth = youths.find((y) => y.id === id);
           return { id, name: youth.name, group: youth.group };
         }),
-        userId: user.uid, // Agregar ID del usuario
+        userId: user.uid,
         createdAt: new Date().toISOString(),
       };
 
@@ -328,6 +388,120 @@ const App = () => {
     } catch (error) {
       console.error("Error guardando asistencia:", error);
       alert("Error al guardar asistencia");
+    }
+  };
+
+  const handleAddTithe = async () => {
+    if (!newTithe.amount || parseFloat(newTithe.amount) <= 0) {
+      alert("Por favor ingresa un monto válido");
+      return;
+    }
+
+    try {
+      const tithe = {
+        ...newTithe,
+        amount: parseFloat(newTithe.amount),
+        userId: user.uid,
+        createdAt: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, "tithes-offerings"), tithe);
+      const newTitheWithId = { id: docRef.id, ...tithe };
+
+      setTithesOfferings([newTitheWithId, ...tithesOfferings]);
+      setNewTithe({
+        date: new Date().toISOString().split("T")[0],
+        category: "adolescentes",
+        type: "diezmo",
+        amount: "",
+        description: "",
+      });
+      setShowAddTithe(false);
+      alert("Registro guardado correctamente");
+    } catch (error) {
+      console.error("Error guardando registro:", error);
+      alert("Error al guardar registro");
+    }
+  };
+
+  const handleAddIncome = async () => {
+    if (!newIncome.amount || parseFloat(newIncome.amount) <= 0) {
+      alert("Por favor ingresa un monto válido");
+      return;
+    }
+
+    try {
+      const income = {
+        ...newIncome,
+        amount: parseFloat(newIncome.amount),
+        userId: user.uid,
+        createdAt: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, "group-incomes"), income);
+      const newIncomeWithId = { id: docRef.id, ...income };
+
+      setGroupIncomes([newIncomeWithId, ...groupIncomes]);
+      setNewIncome({
+        date: new Date().toISOString().split("T")[0],
+        group: "11-14",
+        amount: "",
+        description: "",
+      });
+      setShowAddIncome(false);
+      alert("Ingreso guardado correctamente");
+    } catch (error) {
+      console.error("Error guardando ingreso:", error);
+      alert("Error al guardar ingreso");
+    }
+  };
+
+  const handleAddExpense = async () => {
+    if (!newExpense.amount || parseFloat(newExpense.amount) <= 0) {
+      alert("Por favor ingresa un monto válido");
+      return;
+    }
+
+    try {
+      const expense = {
+        ...newExpense,
+        amount: parseFloat(newExpense.amount),
+        userId: user.uid,
+        createdAt: new Date().toISOString(),
+      };
+
+      const docRef = await addDoc(collection(db, "general-expenses"), expense);
+      const newExpenseWithId = { id: docRef.id, ...expense };
+
+      setGeneralExpenses([newExpenseWithId, ...generalExpenses]);
+      setNewExpense({
+        date: new Date().toISOString().split("T")[0],
+        amount: "",
+        description: "",
+      });
+      setShowAddExpense(false);
+      alert("Gasto guardado correctamente");
+    } catch (error) {
+      console.error("Error guardando gasto:", error);
+      alert("Error al guardar gasto");
+    }
+  };
+
+  const deleteTransaction = async (
+    id,
+    collection_name,
+    setState,
+    currentState
+  ) => {
+    if (!window.confirm("¿Estás seguro de eliminar este registro?")) return;
+
+    try {
+      await deleteDoc(doc(db, collection_name, id));
+      setState(currentState.filter((item) => item.id !== id));
+      alert("Registro eliminado exitosamente");
+    } catch (error) {
+      console.error("Error eliminando registro:", error);
+      alert("Error al eliminar registro");
     }
   };
 
@@ -569,10 +743,10 @@ const App = () => {
             </div>
           </div>
 
-          <div className="flex border-b bg-gray-50">
+          <div className="flex border-b bg-gray-50 overflow-x-auto">
             <button
               onClick={() => setActiveTab("attendance")}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
                 activeTab === "attendance"
                   ? "bg-white text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:bg-gray-100"
@@ -583,7 +757,7 @@ const App = () => {
             </button>
             <button
               onClick={() => setActiveTab("stats")}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
                 activeTab === "stats"
                   ? "bg-white text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:bg-gray-100"
@@ -594,7 +768,7 @@ const App = () => {
             </button>
             <button
               onClick={() => setActiveTab("directory")}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
                 activeTab === "directory"
                   ? "bg-white text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:bg-gray-100"
@@ -602,6 +776,29 @@ const App = () => {
             >
               <Users className="w-5 h-5" />
               Directorio
+            </button>
+            <button
+              onClick={() => setActiveTab("treasury")}
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
+                activeTab === "treasury"
+                  ? "bg-white text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Tesorería
             </button>
           </div>
 
@@ -700,7 +897,7 @@ const App = () => {
                           <Line
                             type="monotone"
                             dataKey="11-14"
-                            stroke="#3b82f6"
+                            stroke="#f59e0b"
                             strokeWidth={2}
                             name="11-14 años"
                           />
@@ -721,7 +918,7 @@ const App = () => {
                           <Line
                             type="monotone"
                             dataKey="23-40"
-                            stroke="#f59e0b"
+                            stroke="#8b5cf6"
                             strokeWidth={2}
                             name="23-40 años"
                           />
@@ -783,7 +980,7 @@ const App = () => {
                               {formatDate(att.date)} - {att.youths.length}{" "}
                               jóvenes presentes
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
                               {groups.map((group) => {
                                 const groupAttendees = att.youths.filter(
                                   (y) => y.group === group
@@ -1054,6 +1251,534 @@ const App = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === "treasury" && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                  Tesorería
+                </h2>
+
+                {/* Sección 1: Diezmos y Ofrendas */}
+                <div className="mb-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-gray-700">
+                      Diezmos y Ofrendas
+                    </h3>
+                    <button
+                      onClick={() => setShowAddTithe(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      + Agregar Registro
+                    </button>
+                  </div>
+
+                  {showAddTithe && (
+                    <div className="bg-blue-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4">
+                        Nuevo Registro
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="date"
+                          value={newTithe.date}
+                          onChange={(e) =>
+                            setNewTithe({ ...newTithe, date: e.target.value })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <select
+                          value={newTithe.category}
+                          onChange={(e) =>
+                            setNewTithe({
+                              ...newTithe,
+                              category: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="adolescentes">
+                            Adolescentes (11-14)
+                          </option>
+                          <option value="jovenes-adultos">
+                            Jóvenes y Adultos (15-40)
+                          </option>
+                        </select>
+                        <select
+                          value={newTithe.type}
+                          onChange={(e) =>
+                            setNewTithe({ ...newTithe, type: e.target.value })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          <option value="diezmo">Diezmo</option>
+                          <option value="ofrenda">Ofrenda</option>
+                        </select>
+                        <input
+                          type="number"
+                          placeholder="Monto *"
+                          value={newTithe.amount}
+                          onChange={(e) =>
+                            setNewTithe({ ...newTithe, amount: e.target.value })
+                          }
+                          min="0"
+                          step="0.01"
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Descripción (opcional)"
+                          value={newTithe.description}
+                          onChange={(e) =>
+                            setNewTithe({
+                              ...newTithe,
+                              description: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none md:col-span-2"
+                        />
+                      </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={handleAddTithe}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAddTithe(false);
+                            setNewTithe({
+                              date: new Date().toISOString().split("T")[0],
+                              category: "adolescentes",
+                              type: "diezmo",
+                              amount: "",
+                              description: "",
+                            });
+                          }}
+                          className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid gap-3">
+                    {tithesOfferings.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-semibold text-gray-800">
+                            {item.type === "diezmo"
+                              ? "📖 Diezmo"
+                              : "🙏 Ofrenda"}{" "}
+                            -
+                            {item.category === "adolescentes"
+                              ? " Adolescentes"
+                              : " Jóvenes y Adultos"}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {formatDate(item.date)} • S/{" "}
+                            {item.amount.toFixed(2)}
+                          </div>
+                          {item.description && (
+                            <div className="text-sm text-gray-500 mt-1">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() =>
+                            deleteTransaction(
+                              item.id,
+                              "tithes-offerings",
+                              setTithesOfferings,
+                              tithesOfferings
+                            )
+                          }
+                          className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                    {tithesOfferings.length === 0 && !showAddTithe && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No hay registros de diezmos u ofrendas aún.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">
+                        Total Adolescentes
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">
+                        S/{" "}
+                        {tithesOfferings
+                          .filter((t) => t.category === "adolescentes")
+                          .reduce((sum, t) => sum + t.amount, 0)
+                          .toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600">
+                        Total Jóvenes y Adultos
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        S/{" "}
+                        {tithesOfferings
+                          .filter((t) => t.category === "jovenes-adultos")
+                          .reduce((sum, t) => sum + t.amount, 0)
+                          .toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sección 2: Ingresos por Grupo */}
+                <div className="mb-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-gray-700">
+                      Ingresos por Grupo
+                    </h3>
+                    <button
+                      onClick={() => setShowAddIncome(true)}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    >
+                      + Agregar Ingreso
+                    </button>
+                  </div>
+
+                  {showAddIncome && (
+                    <div className="bg-green-50 rounded-xl p-6 mb-6 border-2 border-green-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4">
+                        Nuevo Ingreso
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="date"
+                          value={newIncome.date}
+                          onChange={(e) =>
+                            setNewIncome({ ...newIncome, date: e.target.value })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
+                        />
+                        <select
+                          value={newIncome.group}
+                          onChange={(e) =>
+                            setNewIncome({
+                              ...newIncome,
+                              group: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
+                        >
+                          <option value="11-14">Grupo 11-14 años</option>
+                          <option value="15-18">Grupo 15-18 años</option>
+                          <option value="19-22">Grupo 19-22 años</option>
+                          <option value="23-40">Grupo 23-40 años</option>
+                        </select>
+                        <input
+                          type="number"
+                          placeholder="Monto *"
+                          value={newIncome.amount}
+                          onChange={(e) =>
+                            setNewIncome({
+                              ...newIncome,
+                              amount: e.target.value,
+                            })
+                          }
+                          min="0"
+                          step="0.01"
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Descripción (opcional)"
+                          value={newIncome.description}
+                          onChange={(e) =>
+                            setNewIncome({
+                              ...newIncome,
+                              description: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={handleAddIncome}
+                          className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAddIncome(false);
+                            setNewIncome({
+                              date: new Date().toISOString().split("T")[0],
+                              group: "11-14",
+                              amount: "",
+                              description: "",
+                            });
+                          }}
+                          className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid gap-3">
+                    {groupIncomes.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-semibold text-gray-800">
+                            💰 Ingreso - Grupo {item.group}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {formatDate(item.date)} • S/{" "}
+                            {item.amount.toFixed(2)}
+                          </div>
+                          {item.description && (
+                            <div className="text-sm text-gray-500 mt-1">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() =>
+                            deleteTransaction(
+                              item.id,
+                              "group-incomes",
+                              setGroupIncomes,
+                              groupIncomes
+                            )
+                          }
+                          className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                    {groupIncomes.length === 0 && !showAddIncome && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No hay ingresos registrados aún.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {["11-14", "15-18", "19-22", "23-40"].map((group) => {
+                      const totalIngresos = groupIncomes
+                        .filter((i) => i.group === group)
+                        .reduce((sum, i) => sum + i.amount, 0);
+
+                      return (
+                        <div key={group} className="bg-green-50 p-4 rounded-lg">
+                          <div className="text-sm text-gray-600">
+                            Grupo {group}
+                          </div>
+                          <div className="text-xl font-bold text-green-600">
+                            S/ {totalIngresos.toFixed(2)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Sección 3: Gastos Generales */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-gray-700">
+                      Gastos Generales
+                    </h3>
+                    <button
+                      onClick={() => setShowAddExpense(true)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                    >
+                      + Agregar Gasto
+                    </button>
+                  </div>
+
+                  {showAddExpense && (
+                    <div className="bg-red-50 rounded-xl p-6 mb-6 border-2 border-red-200">
+                      <h4 className="text-lg font-bold text-gray-800 mb-4">
+                        Nuevo Gasto General
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                          type="date"
+                          value={newExpense.date}
+                          onChange={(e) =>
+                            setNewExpense({
+                              ...newExpense,
+                              date: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 outline-none"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Monto *"
+                          value={newExpense.amount}
+                          onChange={(e) =>
+                            setNewExpense({
+                              ...newExpense,
+                              amount: e.target.value,
+                            })
+                          }
+                          min="0"
+                          step="0.01"
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Descripción (opcional)"
+                          value={newExpense.description}
+                          onChange={(e) =>
+                            setNewExpense({
+                              ...newExpense,
+                              description: e.target.value,
+                            })
+                          }
+                          className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 outline-none md:col-span-2"
+                        />
+                      </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={handleAddExpense}
+                          className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAddExpense(false);
+                            setNewExpense({
+                              date: new Date().toISOString().split("T")[0],
+                              amount: "",
+                              description: "",
+                            });
+                          }}
+                          className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid gap-3">
+                    {generalExpenses.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center"
+                      >
+                        <div>
+                          <div className="font-semibold text-gray-800">
+                            💸 Gasto General
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {formatDate(item.date)} • S/{" "}
+                            {item.amount.toFixed(2)}
+                          </div>
+                          {item.description && (
+                            <div className="text-sm text-gray-500 mt-1">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() =>
+                            deleteTransaction(
+                              item.id,
+                              "general-expenses",
+                              setGeneralExpenses,
+                              generalExpenses
+                            )
+                          }
+                          className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                    {generalExpenses.length === 0 && !showAddExpense && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No hay gastos registrados aún.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Balance General */}
+                  <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                      Balance General
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <div className="text-sm text-gray-600">
+                          Total Ingresos
+                        </div>
+                        <div className="text-2xl font-bold text-green-600">
+                          S/{" "}
+                          {groupIncomes
+                            .reduce((sum, i) => sum + i.amount, 0)
+                            .toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">
+                          Total Gastos
+                        </div>
+                        <div className="text-2xl font-bold text-red-600">
+                          S/{" "}
+                          {generalExpenses
+                            .reduce((sum, e) => sum + e.amount, 0)
+                            .toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">
+                          Balance Final
+                        </div>
+                        <div
+                          className={`text-2xl font-bold ${
+                            groupIncomes.reduce((sum, i) => sum + i.amount, 0) -
+                              generalExpenses.reduce(
+                                (sum, e) => sum + e.amount,
+                                0
+                              ) >=
+                            0
+                              ? "text-blue-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          S/{" "}
+                          {(
+                            groupIncomes.reduce((sum, i) => sum + i.amount, 0) -
+                            generalExpenses.reduce(
+                              (sum, e) => sum + e.amount,
+                              0
+                            )
+                          ).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
