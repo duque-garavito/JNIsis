@@ -1,3 +1,4 @@
+import { auth, db } from "./firebase/firebase";
 import React, { useState, useEffect } from "react";
 import {
   Users,
