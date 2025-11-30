@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase/firebase";
-import { getAuth } from 'firebase/auth';
+import { getAuth } from "firebase/auth";
 import React, { useState, useEffect } from "react";
 import {
   Users,
@@ -197,6 +197,565 @@ const App = () => {
       setGeneralExpenses([]);
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  const importInitialData = async () => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de importar 72 jóvenes? Esta acción no se puede deshacer."
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+
+    const youths = [
+      // Grupo 11-14
+      {
+        name: "Rumiche Sarango Valery",
+        phone: "",
+        address: "Fe y Alegría Mz J lote 27, Paita",
+        birthdate: "2011-01-18",
+        group: "11-14",
+      },
+      {
+        name: "Chininin Gonzales Luis",
+        phone: "",
+        address: "Fe y Alegría Mz A lote 11, Paita",
+        birthdate: "2011-09-12",
+        group: "11-14",
+      },
+      {
+        name: "Pasapera Almestar David",
+        phone: "",
+        address: "Tablazo Mz J lote 13, Paita",
+        birthdate: "2011-05-14",
+        group: "11-14",
+      },
+      {
+        name: "Atoche Gomez Carlos",
+        phone: "",
+        address: "Ramón Castilla Mz H lote 30, Paita",
+        birthdate: "2011-07-17",
+        group: "11-14",
+      },
+      {
+        name: "Yarlequé Zapata Ruth",
+        phone: "",
+        address: "Consuelo de velazco Mz L lote 13, Paita",
+        birthdate: "2011-08-04",
+        group: "11-14",
+      },
+      {
+        name: "Bautista Miñan Leonel",
+        phone: "",
+        address: "Consuelo de velazco Mz O lote 6, Paita",
+        birthdate: "2012-05-16",
+        group: "11-14",
+      },
+      {
+        name: "Silva Miñan Neymar",
+        phone: "",
+        address: "Consuelo de velazco Mz R lote 25, Paita",
+        birthdate: "2012-03-31",
+        group: "11-14",
+      },
+      {
+        name: "Valladares Atarama Jesús",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 22, Paita",
+        birthdate: "2012-03-27",
+        group: "11-14",
+      },
+      {
+        name: "Maza Nuñez Christell",
+        phone: "",
+        address: "Consuelo de velazco Mz I lote 28, Paita",
+        birthdate: "2012-03-01",
+        group: "11-14",
+      },
+      {
+        name: "Maza Adanaque Nahomy",
+        phone: "",
+        address: "Consuelo de velazco Mz L lote 32, Paita",
+        birthdate: "2011-12-10",
+        group: "11-14",
+      },
+      {
+        name: "Chamba Quinde Esther Noemi",
+        phone: "",
+        address: "Nuevo Porvenir Mz H1 lote 30, Paita",
+        birthdate: "2010-12-21",
+        group: "11-14",
+      },
+      {
+        name: "Flores Huaman Stiven Yael",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 14, Paita",
+        birthdate: "2013-08-30",
+        group: "11-14",
+      },
+      {
+        name: "Carmen Sandoval Sarely Mabell",
+        phone: "",
+        address: "Consuelo de Velazco Mz Z lote 17, Paita",
+        birthdate: "2013-04-09",
+        group: "11-14",
+      },
+      {
+        name: "Yoclla Castillo Astrid Kaori",
+        phone: "",
+        address: "Nuevo horizonte Mz I lote 05, Paita",
+        birthdate: "2013-06-02",
+        group: "11-14",
+      },
+
+      // Grupo 15-18
+      {
+        name: "Valladolin Rivas Jean Franco",
+        phone: "",
+        address: "Consuelo de Velasco Mz L lote 30, Paita",
+        birthdate: "2010-07-01",
+        group: "15-18",
+      },
+      {
+        name: "Zapata Dioses Genesis",
+        phone: "",
+        address: "Marco Jara Mz Ñ lote 8, Paita",
+        birthdate: "2009-04-16",
+        group: "15-18",
+      },
+      {
+        name: "Gonza Orozco Yojan",
+        phone: "",
+        address: "Consuelo de Velasco Mz K lote 26, Paita",
+        birthdate: "2009-03-29",
+        group: "15-18",
+      },
+      {
+        name: "Vilchez Sánchez Angello Leonel",
+        phone: "",
+        address: "Viña del Señor Mz V lote 20, Paita",
+        birthdate: "2010-01-28",
+        group: "15-18",
+      },
+      {
+        name: "Castillo Lima Felipe",
+        phone: "",
+        address: "Alfonso Ugarte Mz X lote 6, Paita",
+        birthdate: "2007-05-23",
+        group: "15-18",
+      },
+      {
+        name: "Nolasco Sánchez Jeremy",
+        phone: "",
+        address: "Manuelita Saenz Mz Y2 lote 2, Paita",
+        birthdate: "2008-07-20",
+        group: "15-18",
+      },
+      {
+        name: "Valladolid Rivas Adrian",
+        phone: "",
+        address: "Consuelo de Velasco Mz I lote 30, Paita",
+        birthdate: "2008-08-10",
+        group: "15-18",
+      },
+      {
+        name: "Cruz Samamé Jhoselyn",
+        phone: "",
+        address: "San Martin Central Mz M lote 8, Paita",
+        birthdate: "2008-03-10",
+        group: "15-18",
+      },
+      {
+        name: "Silva Miñan Franklyn",
+        phone: "",
+        address: "Consuelo de Velasco Mz R lote 25, Paita",
+        birthdate: "2007-11-29",
+        group: "15-18",
+      },
+      {
+        name: "Inga Ramirez Karol",
+        phone: "",
+        address: "Villa Jardin Mz E lote 3, Paita",
+        birthdate: "2008-03-22",
+        group: "15-18",
+      },
+      {
+        name: "Valladares Atarama Arnold",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 22, Paita",
+        birthdate: "2008-01-12",
+        group: "15-18",
+      },
+      {
+        name: "Chuquihuanga Castillo Melany",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 25, Paita",
+        birthdate: "2009-01-29",
+        group: "15-18",
+      },
+      {
+        name: "Pazo Cruz Josue Adrián",
+        phone: "",
+        address: "1 de junio Mz W lote 17, Paita",
+        birthdate: "2009-07-13",
+        group: "15-18",
+      },
+      {
+        name: "Cunya Medina Nicol",
+        phone: "",
+        address: "Consuelo de Velasco Mz K lote 15, Paita",
+        birthdate: "2009-01-21",
+        group: "15-18",
+      },
+      {
+        name: "Juarez Noe Mariana",
+        phone: "",
+        address: "Dos de Agosto Mz B1 lote 16, Paita",
+        birthdate: "2007-08-22",
+        group: "15-18",
+      },
+      {
+        name: "Ramos Ramirez Rosa Amelia",
+        phone: "",
+        address: "Los Jardines Mz E lote 3, Paita",
+        birthdate: "2009-01-01",
+        group: "15-18",
+      },
+      {
+        name: "Manuyama Bautista Alex",
+        phone: "",
+        address: "Consuelo de Velasco Mz O lote 5, Paita",
+        birthdate: "2007-03-09",
+        group: "15-18",
+      },
+      {
+        name: "Llacsahuache Maza David",
+        phone: "",
+        address: "Nuevo Porvenir Mz G lote 10, Paita",
+        birthdate: "2007-10-10",
+        group: "15-18",
+      },
+      {
+        name: "Cherres Adanaque Diego Freddy",
+        phone: "",
+        address: "AA.HH Los Jardines Mz A lote 13, Paita",
+        birthdate: "2007-12-12",
+        group: "15-18",
+      },
+      {
+        name: "Duque Garabito Greysi Anahí",
+        phone: "",
+        address: "Consuelo de Velasco Mz H lote 31, Paita",
+        birthdate: "2009-12-24",
+        group: "15-18",
+      },
+      {
+        name: "Yarlequé Zapata Ariana",
+        phone: "",
+        address: "Consuelo de Velasco Mz L lote 13, Paita",
+        birthdate: "2008-12-13",
+        group: "15-18",
+      },
+      {
+        name: "Miñan Coveñas Jharosaly",
+        phone: "",
+        address: "José Olaya Mz B lote 9, Paita",
+        birthdate: "2010-04-12",
+        group: "15-18",
+      },
+      {
+        name: "López Patiño Rut Yaqueline",
+        phone: "",
+        address: "Consuelo de Velasco Mz L lote 14, Paita",
+        birthdate: "2009-10-29",
+        group: "15-18",
+      },
+      {
+        name: "Valle chuquihuanga Dana",
+        phone: "",
+        address: "Consuelo de Velasco Mz K lote 27, Paita",
+        birthdate: "2010-05-24",
+        group: "15-18",
+      },
+      {
+        name: "Alvarado Cruz Brendy Zarely",
+        phone: "",
+        address: "29 de diciembre Mz R lote 15, Paita",
+        birthdate: "2010-10-09",
+        group: "15-18",
+      },
+      {
+        name: "Pita Novillo Danitza",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 5, Paita",
+        birthdate: "2010-05-24",
+        group: "15-18",
+      },
+
+      // Grupo 19-22
+      {
+        name: "Ramirez Vite Angie",
+        phone: "",
+        address: "Nuevo Porvenir Mz H lote 5, Paita",
+        birthdate: "2005-11-28",
+        group: "19-22",
+      },
+      {
+        name: "Atoche Gomez Karen Priscila",
+        phone: "",
+        address: "Ramón Castilla Mz L lote 30, Paita",
+        birthdate: "2005-05-09",
+        group: "19-22",
+      },
+      {
+        name: "Chuica Adanaque Treysi",
+        phone: "",
+        address: "AA.HH Los jardines Mz A lote 17, Paita",
+        birthdate: "2004-12-03",
+        group: "19-22",
+      },
+      {
+        name: "Chamba Quinde Danverly Angiely",
+        phone: "",
+        address: "Nuevo Porvenir Mz H1 lote 30, Paita",
+        birthdate: "2007-03-11",
+        group: "19-22",
+      },
+      {
+        name: "Sánchez Herrera Jhonatan",
+        phone: "",
+        address: "Manuelita Saenz Mz Y2 lt 12, Paita",
+        birthdate: "2003-02-13",
+        group: "19-22",
+      },
+      {
+        name: "Ontaneda Lloclla Elkin",
+        phone: "",
+        address: "Nuevo Porvenir Mz F lote 12, Paita",
+        birthdate: "2005-05-18",
+        group: "19-22",
+      },
+      {
+        name: "Valladolid Rivas Jhon",
+        phone: "",
+        address: "Consuelo de Velasco Mz I lote 30, Paita",
+        birthdate: "2006-08-28",
+        group: "19-22",
+      },
+      {
+        name: "Alejabo More Ivone Jahaira",
+        phone: "",
+        address: "Viña del señor Mz U lote 2, Paita",
+        birthdate: "2002-11-15",
+        group: "19-22",
+      },
+      {
+        name: "Juarez Noé Isaías",
+        phone: "",
+        address: "Dos de agosto Mz B lote 26, Paita",
+        birthdate: "2004-03-02",
+        group: "19-22",
+      },
+      {
+        name: "Pazo Cruz Juan Arnie",
+        phone: "",
+        address: "1 de junio Mz W lote 17, Paita",
+        birthdate: "2003-07-07",
+        group: "19-22",
+      },
+      {
+        name: "Cherres Adanaque Karen",
+        phone: "",
+        address: "AA.HH Los Jardines Mz A lote 15, Paita",
+        birthdate: "2006-01-22",
+        group: "19-22",
+      },
+
+      // Grupo 23-40
+      {
+        name: "Rosales Cordova Karen Leydi",
+        phone: "",
+        address: "Nuevo Porvenir Mz G lote 33, Paita",
+        birthdate: "2000-02-20",
+        group: "23-40",
+      },
+      {
+        name: "García Salvador José María",
+        phone: "",
+        address: "Marco Jara I Etapa Mz Y lote 04, Paita",
+        birthdate: "2002-03-24",
+        group: "23-40",
+      },
+      {
+        name: "Rumiche Periche Luz",
+        phone: "",
+        address: "La Molina Mz B lote 6, Paita",
+        birthdate: "2001-01-02",
+        group: "23-40",
+      },
+      {
+        name: "Maza Culquicondor Yeyver",
+        phone: "",
+        address: "Nuevo Porvenir Mz G lote 17, Paita",
+        birthdate: "2001-09-10",
+        group: "23-40",
+      },
+      {
+        name: "Maza Culquicondor Danny",
+        phone: "",
+        address: "Nuevo Porvenir Mz G lote 17, Paita",
+        birthdate: "1997-01-18",
+        group: "23-40",
+      },
+      {
+        name: "Flores Huacchillo Heinner",
+        phone: "",
+        address: "Nuevo Porvenir Mz C lote 19, Paita",
+        birthdate: "1998-12-14",
+        group: "23-40",
+      },
+      {
+        name: "Zapata Dioses Juan Martín",
+        phone: "",
+        address: "Marco Jara I Etapa Mz Ñ lote 8, Paita",
+        birthdate: "2001-05-25",
+        group: "23-40",
+      },
+      {
+        name: "Zapata Dioses Jefferson",
+        phone: "",
+        address: "Marco Jara I Etapa Mz Ñ lote 8, Paita",
+        birthdate: "1997-01-24",
+        group: "23-40",
+      },
+      {
+        name: "Véliz Lequernaque Paolo Josué",
+        phone: "",
+        address: "San Martin Occidente N° 112, Paita",
+        birthdate: "1998-09-10",
+        group: "23-40",
+      },
+      {
+        name: "Fiestas Girón Jhony",
+        phone: "",
+        address: "A.H Hermanos Carcamos Mz M lote 3, Paita",
+        birthdate: "1996-06-14",
+        group: "23-40",
+      },
+      {
+        name: "Villegas Carrillo Mabeck",
+        phone: "",
+        address: "Los Jazmines Mz C lote 18, Paita",
+        birthdate: "2004-02-26",
+        group: "23-40",
+      },
+      {
+        name: "Vargas Sánchez Graciela",
+        phone: "",
+        address: "A.H Hermanos Carcamos Mz O lote 12, Paita",
+        birthdate: "1998-01-09",
+        group: "23-40",
+      },
+      {
+        name: "García Salvador Franscisco",
+        phone: "",
+        address: "Marco Jara I Etapa Mz Y lote 04, Paita",
+        birthdate: "1994-08-25",
+        group: "23-40",
+      },
+      {
+        name: "Rosales Cordova Fernando",
+        phone: "",
+        address: "Nuevo Porvenir Mz G lote 33, Paita",
+        birthdate: "2001-11-22",
+        group: "23-40",
+      },
+      {
+        name: "Yamunaque Umbo Jhen",
+        phone: "",
+        address: "1 de junio Mz B lote 1, Paita",
+        birthdate: "1993-11-06",
+        group: "23-40",
+      },
+      {
+        name: "Rondoy Guayanay Edwar Enrique",
+        phone: "",
+        address: "Paita",
+        birthdate: "2002-01-09",
+        group: "23-40",
+      },
+      {
+        name: "Colàn Amaya Armando",
+        phone: "",
+        address: "Juan Valer Mz A lote 6, Paita",
+        birthdate: "2004-05-12",
+        group: "23-40",
+      },
+      {
+        name: "Fiestas Ipanaque Luz",
+        phone: "",
+        address: "Villa Hermosa Mz A lote 1, Paita",
+        birthdate: "2004-10-21",
+        group: "23-40",
+      },
+      {
+        name: "Ramirez Vite Jefferson",
+        phone: "",
+        address: "Los Jardinez Mz B lote 1, Paita",
+        birthdate: "2004-03-20",
+        group: "23-40",
+      },
+      {
+        name: "Juarez More Luis Alberto",
+        phone: "",
+        address: "San Martin Central Mz I lote 44, Paita",
+        birthdate: "1984-09-30",
+        group: "23-40",
+      },
+      {
+        name: "Juarez More Luis Pablo",
+        phone: "",
+        address: "San Martin Central Mz I lote 44, Paita",
+        birthdate: "1990-10-06",
+        group: "23-40",
+      },
+    ];
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const youth of youths) {
+        try {
+          const youthData = {
+            ...youth,
+            userId: user.uid,
+            createdAt: new Date().toISOString(),
+          };
+
+          await addDoc(collection(db, "youths"), youthData);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(`Error con ${youth.name}:`, error);
+        }
+      }
+
+      alert(
+        `✅ Importación completada!\n\n✅ Exitosos: ${successCount}\n❌ Errores: ${errorCount}`
+      );
+
+      // Recargar los datos
+      loadData(user.uid);
+    } catch (error) {
+      console.error("Error en importación:", error);
+      alert("Error durante la importación");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1031,6 +1590,15 @@ const App = () => {
                     Directorio de Jóvenes
                   </h2>
                   <div className="flex gap-3">
+                    {youths.length === 0 && (
+                      <button
+                        onClick={importInitialData}
+                        className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center gap-2"
+                      >
+                        <Download className="w-5 h-5" />
+                        Importar 72 Jóvenes
+                      </button>
+                    )}
                     {youths.length > 0 && (
                       <button
                         onClick={exportToExcel}
