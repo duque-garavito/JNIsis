@@ -1,5 +1,4 @@
-import { auth, db } from "./firebase/firebase";
-import { getAuth } from "firebase/auth";
+// BORRÉ LAS LÍNEAS 1 y 2 PORQUE CHOCABAN CON EL CÓDIGO DE ABAJO
 import React, { useState, useEffect } from "react";
 import {
   Users,
@@ -38,6 +37,7 @@ import {
   orderBy,
   where,
 } from "firebase/firestore";
+// Aquí unifiqué todos los imports de auth en uno solo
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -55,6 +55,7 @@ const firebaseConfig = {
   appId: "1:597624905955:web:94cba5f2a423f3875da5d6",
 };
 
+// Como borramos la línea 1, ahora estas variables SI se pueden crear
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
