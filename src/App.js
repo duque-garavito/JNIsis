@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   List,
   RefreshCw,
+  Settings,
 } from "lucide-react";
 import {
   BarChart,
@@ -35,6 +36,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  setDoc,
   getDocs,
   query,
   orderBy,
@@ -116,8 +118,19 @@ const App = () => {
     amount: "",
     description: "",
   });
+  
+  const [showSettings, setShowSettings] = useState(false);
 
-  const groups = ["11-14", "15-18", "19-22", "23-40"];
+  // State for dynamic groups
+  const [groups, setGroups] = useState([
+    { id: "1", name: "11-14", min: 11, max: 14 },
+    { id: "2", name: "15-18", min: 15, max: 18 },
+    { id: "3", name: "19-22", min: 19, max: 22 },
+    { id: "4", name: "23-40", min: 23, max: 40 },
+  ]);
+
+  // State for settings form
+  const [newGroup, setNewGroup] = useState({ name: "", min: "", max: "" });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -789,10 +802,52 @@ const App = () => {
     }
   };
 
+  const handleAddGroup = async (e) => {
+    e.preventDefault();
+    if (!newGroup.name || !newGroup.min || !newGroup.max) {
+      alert("Por favor completa todos los campos del grupo");
+      return;
+    }
+
+    const updatedGroups = [
+      ...groups,
+      {
+        id: Date.now().toString(),
+        name: newGroup.name,
+        min: parseInt(newGroup.min),
+        max: parseInt(newGroup.max),
+      },
+    ];
+
+    try {
+      await setDoc(doc(db, "settings", "config"), { groups: updatedGroups });
+      setGroups(updatedGroups);
+      setNewGroup({ name: "", min: "", max: "" });
+      alert("Grupo agregado correctamente");
+    } catch (error) {
+      console.error("Error saving groups:", error);
+      alert("Error al guardar la configuración");
+    }
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm("¿Estás seguro de eliminar este grupo?")) return;
+
+    const updatedGroups = groups.filter((g) => g.id !== groupId);
+
+    try {
+      await setDoc(doc(db, "settings", "config"), { groups: updatedGroups });
+      setGroups(updatedGroups);
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      alert("Error al eliminar el grupo");
+    }
+  };
+
   const recalculateAllGroups = async () => {
     if (
       !window.confirm(
-        "¿Estás seguro de actualizar grupos y edades de TODOS los jóvenes según su fecha de nacimiento?"
+        "¿Estás seguro de actualizar grupos y edades de TODOS los jóvenes según su fecha de nacimiento y la configuración actual?"
       )
     ) {
       return;
@@ -809,12 +864,23 @@ const App = () => {
         if (!details) return null;
 
         const correctAge = details.years;
-        let correctGroup = "11-14";
-        if (correctAge >= 15 && correctAge <= 18) correctGroup = "15-18";
-        else if (correctAge >= 19 && correctAge <= 22) correctGroup = "19-22";
-        else if (correctAge >= 23 && correctAge <= 40) correctGroup = "23-40";
-        else if (correctAge < 11) correctGroup = "11-14"; // Default fallback
-        else if (correctAge > 40) correctGroup = "23-40"; // Default fallback
+        
+        // Find correct group based on dynamic settings
+        let correctGroup = "Sin Grupo";
+        // Iterate through groups to find the matching range
+        const matchingGroup = groups.find(g => correctAge >= g.min && correctAge <= g.max);
+        
+        if (matchingGroup) {
+          correctGroup = matchingGroup.name;
+        } else {
+            // Optional: Handle cases outside all ranges (maybe "Otros" or keep logic?)
+            // For now let's leave it as "Sin Grupo" or try to find closest?
+            // User requested customization, so strict ranges are expected.
+            // Let's fallback to "Sin Grupo" or maybe just don't assign?
+            // Actually, let's look for a default or just leave the old one?
+            // Safer to mark as "Sin Asignar" so user knows.
+            correctGroup = "Sin Asignar";
+        }
 
         // Check if update is needed
         if (youth.age !== correctAge || youth.group !== correctGroup) {
@@ -845,6 +911,24 @@ const App = () => {
   const loadData = async (userId) => {
     setLoading(true);
     try {
+      // 1. Load Groups Configuration
+      try {
+        const settingsQuery = await getDocs(collection(db, "settings"));
+        let loadedGroups = null;
+        settingsQuery.forEach(doc => {
+            if (doc.id === 'config' && doc.data().groups) {
+                loadedGroups = doc.data().groups;
+            }
+        });
+
+        if (loadedGroups) {
+           setGroups(loadedGroups);
+        }
+      } catch (e) {
+        console.log("No custom settings found or error fetching settings, using defaults", e);
+      }
+
+      // 2. Load Youths
       const youthsQuery = query(
         collection(db, "youths"),
         where("userId", "==", userId)
@@ -1681,6 +1765,13 @@ const App = () => {
                       >
                         <RefreshCw className="w-5 h-5" />
                       </button>
+                      <button
+                        onClick={() => setShowSettings(true)}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        title="Configurar Grupos"
+                      >
+                        <Settings className="w-5 h-5" />
+                      </button>
                     </div>
                     <div className="flex bg-gray-100 p-1 rounded-lg mr-2">
                       <button
@@ -1875,8 +1966,8 @@ const App = () => {
                               className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
                             >
                               {groups.map((g) => (
-                                <option key={g} value={g}>
-                                  Grupo {g} años
+                                <option key={g.id} value={g.name}>
+                                  Grupo {g.name} ({g.min}-{g.max} años)
                                 </option>
                               ))}
                             </select>
@@ -1916,13 +2007,13 @@ const App = () => {
                 )}
 
                 {groups.map((group) => {
-                  const groupYouths = youths.filter((y) => y.group === group);
+                  const groupYouths = youths.filter((y) => y.group === group.name);
                   if (groupYouths.length === 0) return null;
 
                   return (
-                    <div key={group} className="mb-8">
+                    <div key={group.id} className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-4 bg-blue-50 p-3 rounded-lg">
-                        Grupo {group} años ({groupYouths.length} jóvenes)
+                        Grupo {group.name} ({group.min}-{group.max} años) ({groupYouths.length} jóvenes)
                       </h3>
                       <div
                         className={`grid gap-4 ${
@@ -2017,7 +2108,128 @@ const App = () => {
               </div>
             )}
 
-            {activeTab === "treasury" && (
+            {/* Modal de Configuración de Grupos */}
+            {showSettings && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <Settings className="w-6 h-6 text-blue-600" />
+                        Configuración de Grupos
+                      </h2>
+                      <button
+                        onClick={() => setShowSettings(false)}
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
+                       <h3 className="text-lg font-bold text-blue-800 mb-4">
+                        Agregar Nuevo Grupo
+                      </h3>
+                      <form onSubmit={handleAddGroup} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-blue-900 mb-1">
+                            Nombre del Grupo
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ej: Adolescentes"
+                            value={newGroup.name}
+                            onChange={(e) =>
+                              setNewGroup({ ...newGroup, name: e.target.value })
+                            }
+                            className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-900 mb-1">
+                              Edad Mínima
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="11"
+                              value={newGroup.min}
+                              onChange={(e) =>
+                                setNewGroup({ ...newGroup, min: e.target.value })
+                              }
+                              className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-900 mb-1">
+                              Edad Máxima
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="14"
+                              value={newGroup.max}
+                              onChange={(e) =>
+                                setNewGroup({ ...newGroup, max: e.target.value })
+                              }
+                              className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
+                        >
+                          Agregar Grupo
+                        </button>
+                      </form>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold text-gray-800 mb-2">
+                        Grupos Actuales
+                      </h3>
+                      {groups.map((group) => (
+                        <div
+                          key={group.id}
+                          className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors"
+                        >
+                          <div>
+                            <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                               <Users className="w-4 h-4 text-gray-500" />
+                              {group.name}
+                            </h4>
+                            <p className="text-sm text-gray-500 ml-6">
+                              Rango: {group.min} - {group.max} años
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteGroup(group.id)}
+                            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar grupo"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ))}
+                      {groups.length === 0 && (
+                        <p className="text-gray-500 text-center py-4 italic border-2 border-dashed border-gray-200 rounded-xl">
+                          No hay grupos configurados.
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="mt-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-sm text-yellow-800 flex items-start gap-2">
+                        <RefreshCw className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <p>Recuerda pulsar el botón <b>"Actualizar Grupos"</b> (naranja) después de hacer cambios para reasignar a los jóvenes.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+             {activeTab === "treasury" && (
               <div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">
                   Tesorería
