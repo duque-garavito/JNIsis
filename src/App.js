@@ -138,6 +138,27 @@ const App = () => {
     }
   }, [user]);
 
+  const calculateAgeDetails = (birthdate) => {
+    if (!birthdate) return null;
+    // adding T12:00:00 to avoid timezone shifts changing the day
+    const birth = new Date(birthdate + "T12:00:00");
+    const now = new Date();
+    
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    
+    if (now.getDate() < birth.getDate()) {
+      months--;
+    }
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    return { years, months };
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -1716,12 +1737,23 @@ const App = () => {
                             <input
                               type="date"
                               value={newYouth.birthdate}
-                              onChange={(e) =>
-                                setNewYouth({
-                                  ...newYouth,
-                                  birthdate: e.target.value,
-                                })
-                              }
+                              onChange={(e) => {
+                                const birthdate = e.target.value;
+                                const details = calculateAgeDetails(birthdate);
+                                let updates = { birthdate };
+                                
+                                if (details) {
+                                  updates.age = details.years.toString();
+                                  // Auto-assign group based on calculated age
+                                  const age = details.years;
+                                  if (age >= 11 && age <= 14) updates.group = "11-14";
+                                  else if (age >= 15 && age <= 18) updates.group = "15-18";
+                                  else if (age >= 19 && age <= 22) updates.group = "19-22";
+                                  else if (age >= 23 && age <= 40) updates.group = "23-40";
+                                }
+                                
+                                setNewYouth({ ...newYouth, ...updates });
+                              }}
                               className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             />
                           </div>
@@ -1812,7 +1844,18 @@ const App = () => {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 text-sm text-gray-600">
                                   <div>
                                     <span className="font-semibold">Edad:</span>{" "}
-                                    {youth.age} años
+                                    {youth.birthdate ? (
+                                      (() => {
+                                        const details = calculateAgeDetails(
+                                          youth.birthdate
+                                        );
+                                        return details
+                                          ? `${details.years} años, ${details.months} meses`
+                                          : `${youth.age} años`;
+                                      })()
+                                    ) : (
+                                      <>{youth.age} años</>
+                                    )}
                                   </div>
                                   {youth.phone && (
                                     <div>
