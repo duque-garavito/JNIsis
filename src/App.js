@@ -871,7 +871,7 @@ const App = () => {
 
     } catch (error) {
         console.error("Error updating group:", error);
-        alert("Error al actualizar el grupo");
+        alert(`Error al actualizar el grupo: ${error.message}`);
     }
   };
 
