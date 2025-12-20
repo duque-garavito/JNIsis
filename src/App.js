@@ -822,7 +822,10 @@ const App = () => {
     ];
 
     try {
-      await setDoc(doc(db, "settings", user.uid), { groups: updatedGroups });
+      await setDoc(doc(db, "settings", user.uid), { 
+        groups: updatedGroups,
+        userId: user.uid
+      });
       setGroups(updatedGroups);
       setNewGroup({ name: "", min: "", max: "" });
       alert("Grupo agregado correctamente");
@@ -838,7 +841,10 @@ const App = () => {
     const updatedGroups = groups.filter((g) => g.id !== groupId);
 
     try {
-      await setDoc(doc(db, "settings", user.uid), { groups: updatedGroups });
+      await setDoc(doc(db, "settings", user.uid), { 
+          groups: updatedGroups,
+          userId: user.uid
+      });
       setGroups(updatedGroups);
     } catch (error) {
       console.error("Error deleting group:", error);
@@ -862,6 +868,7 @@ const App = () => {
         
         await setDoc(doc(db, "settings", user.uid), {
             groups: updatedGroups,
+            userId: user.uid,
             updatedAt: new Date().toISOString()
         });
 
