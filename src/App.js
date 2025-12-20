@@ -1761,6 +1761,38 @@ const App = () => {
 
                     <div className="mb-8">
                       <h3 className="text-xl font-semibold text-gray-700 mb-4">
+                        Tendencia de Asistencia (Líneas)
+                      </h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={getChartData()}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tickFormatter={formatDate} />
+                          <YAxis />
+                          <Tooltip labelFormatter={formatDate} />
+                          <Legend />
+                          {groups.map((group, index) => (
+                            <Line
+                              key={group.id}
+                              type="monotone"
+                              dataKey={group.name}
+                              stroke={["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6"][index % 7]}
+                              strokeWidth={2}
+                              name={`Grupo ${group.name}`}
+                            />
+                          ))}
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            stroke="#6366f1"
+                            strokeWidth={3}
+                            name="Total"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="mb-8">
+                      <h3 className="text-xl font-semibold text-gray-700 mb-4">
                         Total de Asistencias por Grupo
                       </h3>
                       <ResponsiveContainer width="100%" height={300}>
