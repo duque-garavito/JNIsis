@@ -28,6 +28,7 @@ import {
   LineChart,
   Line,
   LabelList,
+  Cell,
 } from "recharts";
 import { initializeApp } from "firebase/app";
 import {
@@ -61,6 +62,8 @@ const firebaseConfig = {
   messagingSenderId: "597624905955",
   appId: "1:597624905955:web:94cba5f2a423f3875da5d6",
 };
+
+const COLORS = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6"];
 
 // Como borramos la línea 1, ahora estas variables SI se pueden crear
 const app = initializeApp(firebaseConfig);
@@ -1749,7 +1752,7 @@ const App = () => {
                             <Bar
                               key={group.id}
                               dataKey={group.name}
-                              fill={["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6"][index % 7]}
+                              fill={COLORS[index % COLORS.length]}
                               name={`Grupo ${group.name}`}
                             >
                                 <LabelList dataKey={group.name} position="top" />
@@ -1775,7 +1778,7 @@ const App = () => {
                               key={group.id}
                               type="monotone"
                               dataKey={group.name}
-                              stroke={["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6"][index % 7]}
+                              stroke={COLORS[index % COLORS.length]}
                               strokeWidth={2}
                               name={`Grupo ${group.name}`}
                             />
@@ -1816,9 +1819,12 @@ const App = () => {
                           <Tooltip />
                           <Bar
                             dataKey="count"
-                            fill="#6366f1"
                             name="Asistencias"
-                          />
+                          >
+                             {getGroupTotals().map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                             ))}
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
