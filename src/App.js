@@ -13,6 +13,7 @@ import {
   LogIn,
   LayoutGrid,
   List,
+  RefreshCw,
 } from "lucide-react";
 import {
   BarChart,
@@ -783,6 +784,59 @@ const App = () => {
     } catch (error) {
       console.error("Error en importación:", error);
       alert("Error durante la importación");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recalculateAllGroups = async () => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de actualizar grupos y edades de TODOS los jóvenes según su fecha de nacimiento?"
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    let updatedCount = 0;
+
+    try {
+      const updates = youths.map(async (youth) => {
+        if (!youth.birthdate) return null;
+
+        const details = calculateAgeDetails(youth.birthdate);
+        if (!details) return null;
+
+        const correctAge = details.years;
+        let correctGroup = "11-14";
+        if (correctAge >= 15 && correctAge <= 18) correctGroup = "15-18";
+        else if (correctAge >= 19 && correctAge <= 22) correctGroup = "19-22";
+        else if (correctAge >= 23 && correctAge <= 40) correctGroup = "23-40";
+        else if (correctAge < 11) correctGroup = "11-14"; // Default fallback
+        else if (correctAge > 40) correctGroup = "23-40"; // Default fallback
+
+        // Check if update is needed
+        if (youth.age !== correctAge || youth.group !== correctGroup) {
+          const youthRef = doc(db, "youths", youth.id);
+          await updateDoc(youthRef, {
+            age: correctAge,
+            group: correctGroup,
+            updatedAt: new Date().toISOString(),
+          });
+          updatedCount++;
+          return true;
+        }
+        return false;
+      });
+
+      await Promise.all(updates);
+
+      alert(`✅ Proceso completado.\nSe actualizaron ${updatedCount} registros.`);
+      loadData(user.uid);
+    } catch (error) {
+      console.error("Error recalculando grupos:", error);
+      alert("Error al actualizar grupos");
     } finally {
       setLoading(false);
     }
@@ -1619,6 +1673,15 @@ const App = () => {
                     Directorio de Jóvenes
                   </h2>
                   <div className="flex gap-3">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={recalculateAllGroups}
+                        className="bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-colors flex items-center gap-2"
+                        title="Actualizar grupos y edades según fecha de nacimiento"
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                      </button>
+                    </div>
                     <div className="flex bg-gray-100 p-1 rounded-lg mr-2">
                       <button
                         onClick={() => setViewMode("list")}
