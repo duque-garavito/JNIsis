@@ -146,6 +146,16 @@ const App = () => {
   // State for settings form
   const [newGroup, setNewGroup] = useState({ name: "", min: "", max: "" });
 
+  // State for statistics filtering
+  const [statsStartDate, setStatsStartDate] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .split("T")[0]
+  );
+  const [statsEndDate, setStatsEndDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -1313,21 +1323,24 @@ const App = () => {
     });
 
     attendances.forEach((att) => {
-      if (!dateMap[att.date]) {
-        dateMap[att.date] = {
-          date: att.date,
-          ...defaultGroupCounts,
-          total: 0,
-        };
-      }
-      att.youths.forEach((youth) => {
-        // Only count if the group exists in our dynamic groups (or maybe we should count all?)
-        // For chart consistency, we align with defined groups.
-        if (dateMap[att.date][youth.group] !== undefined) {
-             dateMap[att.date][youth.group]++;
+      // Filter by date range
+      if (att.date >= statsStartDate && att.date <= statsEndDate) {
+        if (!dateMap[att.date]) {
+          dateMap[att.date] = {
+            date: att.date,
+            ...defaultGroupCounts,
+            total: 0,
+          };
         }
-        dateMap[att.date].total++;
-      });
+        att.youths.forEach((youth) => {
+          // Only count if the group exists in our dynamic groups (or maybe we should count all?)
+          // For chart consistency, we align with defined groups.
+          if (dateMap[att.date][youth.group] !== undefined) {
+              dateMap[att.date][youth.group]++;
+          }
+          dateMap[att.date].total++;
+        });
+      }
     });
     return Object.values(dateMap).sort(
       (a, b) => new Date(a.date) - new Date(b.date)
@@ -1341,11 +1354,14 @@ const App = () => {
     });
 
     attendances.forEach((att) => {
-      att.youths.forEach((youth) => {
-        if (totals[youth.group] !== undefined) {
-            totals[youth.group]++;
-        }
-      });
+      // Filter by date range
+      if (att.date >= statsStartDate && att.date <= statsEndDate) {
+        att.youths.forEach((youth) => {
+          if (totals[youth.group] !== undefined) {
+              totals[youth.group]++;
+          }
+        });
+      }
     });
     return Object.entries(totals).map(([group, count]) => ({ group, count }));
   };
@@ -1686,6 +1702,34 @@ const App = () => {
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">
                   Estadísticas de Asistencia
                 </h2>
+
+                <div className="flex flex-wrap gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Desde
+                    </label>
+                    <input
+                      type="date"
+                      value={statsStartDate}
+                      onChange={(e) => setStatsStartDate(e.target.value)}
+                      className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hasta
+                    </label>
+                    <input
+                      type="date"
+                      value={statsEndDate}
+                      onChange={(e) => setStatsEndDate(e.target.value)}
+                      className="border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="pb-2 text-sm text-gray-500 hidden sm:block">
+                    Filtra los gráficos por fecha
+                  </div>
+                </div>
 
                 {attendances.length > 0 ? (
                   <>
