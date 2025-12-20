@@ -1631,111 +1631,160 @@ const App = () => {
                 </div>
 
                 {showAddYouth && (
-                  <div className="bg-blue-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">
-                      {editingYouth ? "Editar Joven" : "Nuevo Joven"}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        placeholder="Nombre completo *"
-                        value={newYouth.name}
-                        onChange={(e) =>
-                          setNewYouth({ ...newYouth, name: e.target.value })
-                        }
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Edad *"
-                        value={newYouth.age}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (
-                            value === "" ||
-                            (value.length <= 2 && parseInt(value) >= 0)
-                          ) {
-                            setNewYouth({ ...newYouth, age: value });
-                          }
-                        }}
-                        min="0"
-                        max="99"
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                      <input
-                        type="tel"
-                        placeholder="Celular"
-                        value={newYouth.phone}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "");
-                          if (value.length <= 9) {
-                            setNewYouth({ ...newYouth, phone: value });
-                          }
-                        }}
-                        maxLength="9"
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                      <input
-                        type="date"
-                        placeholder="Fecha de nacimiento"
-                        value={newYouth.birthdate}
-                        onChange={(e) =>
-                          setNewYouth({
-                            ...newYouth,
-                            birthdate: e.target.value,
-                          })
-                        }
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Dirección"
-                        value={newYouth.address}
-                        onChange={(e) =>
-                          setNewYouth({ ...newYouth, address: e.target.value })
-                        }
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none md:col-span-2"
-                      />
-                      <select
-                        value={newYouth.group}
-                        onChange={(e) =>
-                          setNewYouth({ ...newYouth, group: e.target.value })
-                        }
-                        className="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                      >
-                        {groups.map((g) => (
-                          <option key={g} value={g}>
-                            Grupo {g} años
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex gap-3 mt-4">
-                      <button
-                        onClick={
-                          editingYouth ? handleUpdateYouth : handleAddYouth
-                        }
-                        className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-                      >
-                        {editingYouth ? "Actualizar" : "Guardar"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAddYouth(false);
-                          setEditingYouth(null);
-                          setNewYouth({
-                            name: "",
-                            age: "",
-                            phone: "",
-                            address: "",
-                            birthdate: "",
-                            group: "11-14",
-                          });
-                        }}
-                        className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
-                      >
-                        Cancelar
-                      </button>
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+                      <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-2xl font-bold text-gray-800">
+                            {editingYouth ? "Editar Joven" : "Nuevo Joven"}
+                          </h3>
+                          <button
+                            onClick={() => {
+                              setShowAddYouth(false);
+                              setEditingYouth(null);
+                              setNewYouth({
+                                name: "",
+                                age: "",
+                                phone: "",
+                                address: "",
+                                birthdate: "",
+                                group: "11-14",
+                              });
+                            }}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Nombre Completo *</label>
+                            <input
+                              type="text"
+                              placeholder="Ej: Juan Pérez"
+                              value={newYouth.name}
+                              onChange={(e) =>
+                                setNewYouth({ ...newYouth, name: e.target.value })
+                              }
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Edad *</label>
+                            <input
+                              type="number"
+                              placeholder="Ej: 15"
+                              value={newYouth.age}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (
+                                  value === "" ||
+                                  (value.length <= 2 && parseInt(value) >= 0)
+                                ) {
+                                  setNewYouth({ ...newYouth, age: value });
+                                }
+                              }}
+                              min="0"
+                              max="99"
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Celular</label>
+                            <input
+                              type="tel"
+                              placeholder="999 999 999"
+                              value={newYouth.phone}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "");
+                                if (value.length <= 9) {
+                                  setNewYouth({ ...newYouth, phone: value });
+                                }
+                              }}
+                              maxLength="9"
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Fecha de Nacimiento</label>
+                            <input
+                              type="date"
+                              value={newYouth.birthdate}
+                              onChange={(e) =>
+                                setNewYouth({
+                                  ...newYouth,
+                                  birthdate: e.target.value,
+                                })
+                              }
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-semibold text-gray-700">Dirección</label>
+                            <input
+                              type="text"
+                              placeholder="Ej: Av. Principal 123"
+                              value={newYouth.address}
+                              onChange={(e) =>
+                                setNewYouth({ ...newYouth, address: e.target.value })
+                              }
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-semibold text-gray-700">Grupo Etario</label>
+                            <select
+                              value={newYouth.group}
+                              onChange={(e) =>
+                                setNewYouth({ ...newYouth, group: e.target.value })
+                              }
+                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                            >
+                              {groups.map((g) => (
+                                <option key={g} value={g}>
+                                  Grupo {g} años
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-4 mt-8 pt-6 border-t">
+                          <button
+                            onClick={
+                              editingYouth ? handleUpdateYouth : handleAddYouth
+                            }
+                            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+                          >
+                            {editingYouth ? "Actualizar Joven" : "Guardar Joven"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAddYouth(false);
+                              setEditingYouth(null);
+                              setNewYouth({
+                                name: "",
+                                age: "",
+                                phone: "",
+                                address: "",
+                                birthdate: "",
+                                group: "11-14",
+                              });
+                            }}
+                            className="flex-1 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all duration-200"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
