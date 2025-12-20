@@ -120,6 +120,7 @@ const App = () => {
   });
   
   const [showSettings, setShowSettings] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
 
   // State for dynamic groups
   const [groups, setGroups] = useState([
@@ -841,6 +842,36 @@ const App = () => {
     } catch (error) {
       console.error("Error deleting group:", error);
       alert("Error al eliminar el grupo");
+    }
+  };
+
+  const handleUpdateGroup = async (e) => {
+    e.preventDefault();
+    if (!newGroup.name || !newGroup.min || !newGroup.max) {
+      alert("Todos los campos son obligatorios");
+      return;
+    }
+
+    try {
+        const updatedGroups = groups.map(g => 
+            g.id === editingGroup.id 
+            ? { ...g, name: newGroup.name, min: parseInt(newGroup.min), max: parseInt(newGroup.max) } 
+            : g
+        );
+        
+        await setDoc(doc(db, "settings", "config"), {
+            groups: updatedGroups,
+            updatedAt: new Date().toISOString()
+        });
+
+        setGroups(updatedGroups);
+        setNewGroup({ name: "", min: "", max: "" });
+        setEditingGroup(null);
+        alert("Grupo actualizado correctamente");
+
+    } catch (error) {
+        console.error("Error updating group:", error);
+        alert("Error al actualizar el grupo");
     }
   };
 
@@ -2126,9 +2157,9 @@ const App = () => {
 
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6">
                        <h3 className="text-lg font-bold text-blue-800 mb-4">
-                        Agregar Nuevo Grupo
+                        {editingGroup ? "Editar Grupo" : "Agregar Nuevo Grupo"}
                       </h3>
-                      <form onSubmit={handleAddGroup} className="space-y-4">
+                      <form onSubmit={editingGroup ? handleUpdateGroup : handleAddGroup} className="space-y-4">
                         <div>
                           <label className="block text-sm font-semibold text-blue-900 mb-1">
                             Nombre del Grupo
@@ -2173,12 +2204,26 @@ const App = () => {
                             />
                           </div>
                         </div>
-                        <button
-                          type="submit"
-                          className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
-                        >
-                          Agregar Grupo
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
+                            >
+                              {editingGroup ? "Actualizar Grupo" : "Agregar Grupo"}
+                            </button>
+                            {editingGroup && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                      setEditingGroup(null);
+                                      setNewGroup({ name: "", min: "", max: "" });
+                                  }}
+                                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 transition-all"
+                                >
+                                  Cancelar
+                                </button>
+                            )}
+                        </div>
                       </form>
                     </div>
 
@@ -2200,13 +2245,25 @@ const App = () => {
                               Rango: {group.min} - {group.max} años
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleDeleteGroup(group.id)}
-                            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Eliminar grupo"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                    setEditingGroup(group);
+                                    setNewGroup({ name: group.name, min: group.min, max: group.max });
+                                }}
+                                className="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Editar grupo"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteGroup(group.id)}
+                                className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar grupo"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                          </div>
                         </div>
                       ))}
                       {groups.length === 0 && (
