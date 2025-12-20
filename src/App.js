@@ -29,6 +29,8 @@ import {
   Line,
   LabelList,
   Cell,
+  PieChart,
+  Pie,
 } from "recharts";
 import { initializeApp } from "firebase/app";
 import {
@@ -1826,6 +1828,33 @@ const App = () => {
                              ))}
                           </Bar>
                         </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="mb-8">
+                      <h3 className="text-xl font-semibold text-gray-700 mb-4">
+                        Distribución de Asistencia (Circular)
+                      </h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={getGroupTotals()}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="count"
+                            nameKey="group"
+                          >
+                            {getGroupTotals().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
                       </ResponsiveContainer>
                     </div>
 
