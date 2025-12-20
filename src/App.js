@@ -867,11 +867,11 @@ const App = () => {
     setEditingYouth(youth);
     setNewYouth({
       name: youth.name,
-      age: youth.age.toString(),
-      phone: youth.phone,
-      address: youth.address,
-      birthdate: youth.birthdate,
-      group: youth.group,
+      age: youth.age ? youth.age.toString() : "",
+      phone: youth.phone || "",
+      address: youth.address || "",
+      birthdate: youth.birthdate || "",
+      group: youth.group || "11-14",
     });
     setShowAddYouth(true);
   };
