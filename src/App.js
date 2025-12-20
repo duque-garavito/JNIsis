@@ -1241,19 +1241,27 @@ const App = () => {
 
   const getChartData = () => {
     const dateMap = {};
+    
+    // Initialize default group counts
+    const defaultGroupCounts = {};
+    groups.forEach(g => {
+        defaultGroupCounts[g.name] = 0;
+    });
+
     attendances.forEach((att) => {
       if (!dateMap[att.date]) {
         dateMap[att.date] = {
           date: att.date,
-          "11-14": 0,
-          "15-18": 0,
-          "19-22": 0,
-          "23-40": 0,
+          ...defaultGroupCounts,
           total: 0,
         };
       }
       att.youths.forEach((youth) => {
-        dateMap[att.date][youth.group]++;
+        // Only count if the group exists in our dynamic groups (or maybe we should count all?)
+        // For chart consistency, we align with defined groups.
+        if (dateMap[att.date][youth.group] !== undefined) {
+             dateMap[att.date][youth.group]++;
+        }
         dateMap[att.date].total++;
       });
     });
@@ -1263,10 +1271,16 @@ const App = () => {
   };
 
   const getGroupTotals = () => {
-    const totals = { "11-14": 0, "15-18": 0, "19-22": 0, "23-40": 0 };
+    const totals = {};
+    groups.forEach(g => {
+        totals[g.name] = 0;
+    });
+
     attendances.forEach((att) => {
       att.youths.forEach((youth) => {
-        totals[youth.group]++;
+        if (totals[youth.group] !== undefined) {
+            totals[youth.group]++;
+        }
       });
     });
     return Object.entries(totals).map(([group, count]) => ({ group, count }));
@@ -1552,13 +1566,13 @@ const App = () => {
                 </div>
 
                 {groups.map((group) => {
-                  const groupYouths = youths.filter((y) => y.group === group);
+                  const groupYouths = youths.filter((y) => y.group === group.name);
                   if (groupYouths.length === 0) return null;
 
                   return (
-                    <div key={group} className="mb-8">
+                    <div key={group.id} className="mb-8">
                       <h3 className="text-xl font-bold text-gray-800 mb-4 bg-blue-50 p-3 rounded-lg">
-                        Grupo {group} años ({groupYouths.length} jóvenes)
+                        Grupo {group.name} ({group.min}-{group.max} años) ({groupYouths.length} jóvenes)
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {groupYouths.map((youth) => (
@@ -1622,34 +1636,16 @@ const App = () => {
                           <YAxis />
                           <Tooltip labelFormatter={formatDate} />
                           <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="11-14"
-                            stroke="#f59e0b"
-                            strokeWidth={2}
-                            name="11-14 años"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="15-18"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            name="15-18 años"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="19-22"
-                            stroke="#10b981"
-                            strokeWidth={2}
-                            name="19-22 años"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="23-40"
-                            stroke="#8b5cf6"
-                            strokeWidth={2}
-                            name="23-40 años"
-                          />
+                          {groups.map((group, index) => (
+                            <Line
+                              key={group.id}
+                              type="monotone"
+                              dataKey={group.name}
+                              stroke={["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ef4444", "#ec4899", "#14b8a6"][index % 7]}
+                              strokeWidth={2}
+                              name={`Grupo ${group.name}`}
+                            />
+                          ))}
                           <Line
                             type="monotone"
                             dataKey="total"
@@ -1711,16 +1707,16 @@ const App = () => {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
                               {groups.map((group) => {
                                 const groupAttendees = att.youths.filter(
-                                  (y) => y.group === group
+                                  (y) => y.group === group.name
                                 );
                                 if (groupAttendees.length === 0) return null;
                                 return (
                                   <div
-                                    key={group}
+                                    key={group.id}
                                     className="bg-white rounded p-2"
                                   >
                                     <div className="font-semibold text-gray-700 mb-1">
-                                      Grupo {group}:
+                                      Grupo {group.name}:
                                     </div>
                                     <div className="text-gray-600">
                                       {groupAttendees
