@@ -822,7 +822,7 @@ const App = () => {
     ];
 
     try {
-      await setDoc(doc(db, "settings", user.uid), { 
+      await setDoc(doc(db, "youths", "settings_" + user.uid), { 
         groups: updatedGroups,
         userId: user.uid
       });
@@ -841,7 +841,7 @@ const App = () => {
     const updatedGroups = groups.filter((g) => g.id !== groupId);
 
     try {
-      await setDoc(doc(db, "settings", user.uid), { 
+      await setDoc(doc(db, "youths", "settings_" + user.uid), { 
           groups: updatedGroups,
           userId: user.uid
       });
@@ -866,7 +866,7 @@ const App = () => {
             : g
         );
         
-        await setDoc(doc(db, "settings", user.uid), {
+        await setDoc(doc(db, "youths", "settings_" + user.uid), {
             groups: updatedGroups,
             userId: user.uid,
             updatedAt: new Date().toISOString()
@@ -950,26 +950,29 @@ const App = () => {
   const loadData = async (userId) => {
     setLoading(true);
     try {
-      // 1. Load Groups Configuration
+      // 2. Load Youths (filtering out settings)
+      const youthsQuery = query(
+        collection(db, "youths"),
+        where("userId", "==", userId)
+      );
+      const youthsSnapshot = await getDocs(youthsQuery);
+      const youthsData = youthsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter(doc => !doc.id.startsWith("settings_"));
+      setYouths(youthsData);
+
+      // 1. Load Groups Configuration (from youths collection now)
       try {
-        const settingsDoc = await getDoc(doc(db, "settings", userId));
+        const settingsDoc = await getDoc(doc(db, "youths", "settings_" + userId));
         if (settingsDoc.exists() && settingsDoc.data().groups) {
              setGroups(settingsDoc.data().groups);
         }
       } catch (e) {
         console.log("No custom settings found or error fetching settings, using defaults", e);
       }
-
-      // 2. Load Youths
-      const youthsQuery = query(
-        collection(db, "youths"),
-        where("userId", "==", userId)
-      );
-      const youthsSnapshot = await getDocs(youthsQuery);
-      const youthsData = youthsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
       setYouths(youthsData);
 
       const attendancesQuery = query(
