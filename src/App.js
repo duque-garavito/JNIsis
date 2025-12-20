@@ -11,6 +11,8 @@ import {
   Download,
   LogOut,
   LogIn,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import {
   BarChart,
@@ -69,6 +71,7 @@ const App = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [activeTab, setActiveTab] = useState("attendance");
+  const [viewMode, setViewMode] = useState("list");
   const [youths, setYouths] = useState([]);
   const [attendances, setAttendances] = useState([]);
   const [showAddYouth, setShowAddYouth] = useState(false);
@@ -1616,6 +1619,30 @@ const App = () => {
                     Directorio de Jóvenes
                   </h2>
                   <div className="flex gap-3">
+                    <div className="flex bg-gray-100 p-1 rounded-lg mr-2">
+                      <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-2 rounded-md transition-all ${
+                          viewMode === "list"
+                            ? "bg-white shadow text-blue-600"
+                            : "text-gray-500 hover:text-gray-700"
+                        }`}
+                        title="Vista de Lista"
+                      >
+                        <List className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 rounded-md transition-all ${
+                          viewMode === "grid"
+                            ? "bg-white shadow text-blue-600"
+                            : "text-gray-500 hover:text-gray-700"
+                        }`}
+                        title="Vista de Cuadrícula"
+                      >
+                        <LayoutGrid className="w-5 h-5" />
+                      </button>
+                    </div>
                     {youths.length === 0 && (
                       <button
                         onClick={importInitialData}
@@ -1834,7 +1861,13 @@ const App = () => {
                       <h3 className="text-xl font-bold text-gray-800 mb-4 bg-blue-50 p-3 rounded-lg">
                         Grupo {group} años ({groupYouths.length} jóvenes)
                       </h3>
-                      <div className="grid gap-4">
+                      <div
+                        className={`grid gap-4 ${
+                          viewMode === "grid"
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                            : "grid-cols-1"
+                        }`}
+                      >
                         {groupYouths.map((youth) => (
                           <div
                             key={youth.id}
