@@ -108,6 +108,18 @@ const App = () => {
     amount: "",
     description: "",
   });
+  // Check for existing attendance when date changes
+  useEffect(() => {
+    const existingAttendance = attendances.find(
+      (a) => a.date === attendanceDate
+    );
+    if (existingAttendance) {
+      setSelectedYouths(existingAttendance.youths.map((y) => y.id));
+    } else {
+      setSelectedYouths([]);
+    }
+  }, [attendanceDate, attendances]);
+
   const [newIncome, setNewIncome] = useState({
     date: new Date().toISOString().split("T")[0],
     group: "11-14",
@@ -1122,27 +1134,49 @@ const App = () => {
 
   const handleSaveAttendance = async () => {
     if (selectedYouths.length === 0) {
-      alert("Selecciona al menos un joven");
-      return;
+      alert("Selecciona al menos un joven o la lista quedará vacía");
+       // Allow saving empty list if clearing attendance? For now, keep alert but maybe allow empty save if updating?
+       // User prompt implies they want to see "who attended", so valid list is expected.
+       // Let's stick to requiring at least one for now, or maybe allow empty to clear?
+       // If updating, empty selectedYouths means removing everyone.
     }
 
     try {
-      const attendance = {
+      const attendanceData = {
         date: attendanceDate,
         youths: selectedYouths.map((id) => {
           const youth = youths.find((y) => y.id === id);
           return { id, name: youth.name, group: youth.group };
         }),
         userId: user.uid,
-        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(), // Use updatedAt for updates
       };
 
-      const docRef = await addDoc(collection(db, "attendances"), attendance);
-      const newAttendance = { id: docRef.id, ...attendance };
+      // Check if exists to update or create
+      const existingRecord = attendances.find(a => a.date === attendanceDate);
 
-      setAttendances([newAttendance, ...attendances]);
-      setSelectedYouths([]);
-      alert("Asistencia guardada correctamente");
+      if (existingRecord) {
+          // Update existing
+          const docRef = doc(db, "attendances", existingRecord.id);
+          await updateDoc(docRef, attendanceData);
+          
+          setAttendances(attendances.map(a => 
+              a.id === existingRecord.id ? { ...attendanceData, id: existingRecord.id } : a
+          ));
+          alert("Asistencia actualizada correctamente");
+      } else {
+          // Create new
+          const docRef = await addDoc(collection(db, "attendances"), {
+              ...attendanceData,
+              createdAt: new Date().toISOString()
+          });
+          const newAttendance = { id: docRef.id, ...attendanceData };
+          setAttendances([newAttendance, ...attendances]);
+          alert("Asistencia guardada correctamente");
+      }
+      // Don't clear selectedYouths here, so user sees what they saved. 
+      // Or maybe clear? Usually forms clear. But since it's date-bound, keeping it matches the date state.
+      // Let's NOT clear selectedYouths, so the UI reflects the current date's state.
     } catch (error) {
       console.error("Error guardando asistencia:", error);
       alert("Error al guardar asistencia");
