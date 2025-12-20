@@ -38,6 +38,7 @@ import {
   doc,
   setDoc,
   getDocs,
+  getDoc,
   query,
   orderBy,
   where,
@@ -821,7 +822,7 @@ const App = () => {
     ];
 
     try {
-      await setDoc(doc(db, "settings", "config"), { groups: updatedGroups });
+      await setDoc(doc(db, "settings", user.uid), { groups: updatedGroups });
       setGroups(updatedGroups);
       setNewGroup({ name: "", min: "", max: "" });
       alert("Grupo agregado correctamente");
@@ -837,7 +838,7 @@ const App = () => {
     const updatedGroups = groups.filter((g) => g.id !== groupId);
 
     try {
-      await setDoc(doc(db, "settings", "config"), { groups: updatedGroups });
+      await setDoc(doc(db, "settings", user.uid), { groups: updatedGroups });
       setGroups(updatedGroups);
     } catch (error) {
       console.error("Error deleting group:", error);
@@ -859,7 +860,7 @@ const App = () => {
             : g
         );
         
-        await setDoc(doc(db, "settings", "config"), {
+        await setDoc(doc(db, "settings", user.uid), {
             groups: updatedGroups,
             updatedAt: new Date().toISOString()
         });
@@ -944,16 +945,9 @@ const App = () => {
     try {
       // 1. Load Groups Configuration
       try {
-        const settingsQuery = await getDocs(collection(db, "settings"));
-        let loadedGroups = null;
-        settingsQuery.forEach(doc => {
-            if (doc.id === 'config' && doc.data().groups) {
-                loadedGroups = doc.data().groups;
-            }
-        });
-
-        if (loadedGroups) {
-           setGroups(loadedGroups);
+        const settingsDoc = await getDoc(doc(db, "settings", userId));
+        if (settingsDoc.exists() && settingsDoc.data().groups) {
+             setGroups(settingsDoc.data().groups);
         }
       } catch (e) {
         console.log("No custom settings found or error fetching settings, using defaults", e);
