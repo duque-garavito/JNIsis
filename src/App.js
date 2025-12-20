@@ -146,9 +146,13 @@ const App = () => {
     
     let years = now.getFullYear() - birth.getFullYear();
     let months = now.getMonth() - birth.getMonth();
-    
-    if (now.getDate() < birth.getDate()) {
+    let days = now.getDate() - birth.getDate();
+
+    if (days < 0) {
       months--;
+      // Get days in the previous month
+      const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      days += lastMonth.getDate();
     }
     
     if (months < 0) {
@@ -156,7 +160,7 @@ const App = () => {
       months += 12;
     }
     
-    return { years, months };
+    return { years, months, days };
   };
 
   const handleLogin = async (e) => {
@@ -1700,19 +1704,19 @@ const App = () => {
                               type="number"
                               placeholder="Ej: 15"
                               value={newYouth.age}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (
-                                  value === "" ||
-                                  (value.length <= 2 && parseInt(value) >= 0)
-                                ) {
-                                  setNewYouth({ ...newYouth, age: value });
-                                }
-                              }}
-                              min="0"
-                              max="99"
-                              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                              readOnly
+                              className="w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             />
+                            {newYouth.birthdate && (
+                              <p className="text-sm text-blue-600 font-medium">
+                                {(() => {
+                                  const details = calculateAgeDetails(newYouth.birthdate);
+                                  return details
+                                    ? `${details.years} años, ${details.months} meses y ${details.days} días`
+                                    : "";
+                                })()}
+                              </p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -1850,7 +1854,7 @@ const App = () => {
                                           youth.birthdate
                                         );
                                         return details
-                                          ? `${details.years} años, ${details.months} meses`
+                                          ? `${details.years} años, ${details.months} meses y ${details.days} días`
                                           : `${youth.age} años`;
                                       })()
                                     ) : (
